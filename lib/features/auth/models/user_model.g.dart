@@ -13,6 +13,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       photoUrl: json['photoUrl'] as String?,
       totalTokens: (json['totalTokens'] as num?)?.toInt() ?? 10,
       usedTokens: (json['usedTokens'] as num?)?.toInt() ?? 0,
+      isGuest: json['isGuest'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -22,4 +23,5 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'photoUrl': instance.photoUrl,
       'totalTokens': instance.totalTokens,
       'usedTokens': instance.usedTokens,
+      'isGuest': instance.isGuest,
     };

@@ -121,6 +121,7 @@ class _InvoiceListItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
+        isThreeLine: true,
         contentPadding: const EdgeInsets.all(16),
         leading: Container(
           width: 8,
@@ -150,6 +151,7 @@ class _InvoiceListItem extends StatelessWidget {
           ],
         ),
         trailing: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -160,9 +162,9 @@ class _InvoiceListItem extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: _getRiskColor().withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),

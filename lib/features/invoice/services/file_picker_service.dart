@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -9,14 +11,16 @@ enum FileSource {
 }
 
 class PickedFileInfo {
-  final String path;
+  final String? path;
+  final Uint8List? bytes;
   final String name;
   final int size;
   final String extension;
   final FileSource source;
 
   PickedFileInfo({
-    required this.path,
+    this.path,
+    this.bytes,
     required this.name,
     required this.size,
     required this.extension,
@@ -43,16 +47,26 @@ class FilePickerService {
 
       if (image == null) return null;
 
-      final file = File(image.path);
-      final fileSize = await file.length();
-
-      return PickedFileInfo(
-        path: image.path,
-        name: image.name,
-        size: fileSize,
-        extension: image.path.split('.').last,
-        source: FileSource.camera,
-      );
+      if (kIsWeb) {
+        final bytes = await image.readAsBytes();
+        return PickedFileInfo(
+          bytes: bytes,
+          name: image.name,
+          size: bytes.length,
+          extension: image.name.split('.').last,
+          source: FileSource.camera,
+        );
+      } else {
+        final file = File(image.path);
+        final fileSize = await file.length();
+        return PickedFileInfo(
+          path: image.path,
+          name: image.name,
+          size: fileSize,
+          extension: image.path.split('.').last,
+          source: FileSource.camera,
+        );
+      }
     } catch (e) {
       rethrow;
     }
@@ -68,16 +82,26 @@ class FilePickerService {
 
       if (image == null) return null;
 
-      final file = File(image.path);
-      final fileSize = await file.length();
-
-      return PickedFileInfo(
-        path: image.path,
-        name: image.name,
-        size: fileSize,
-        extension: image.path.split('.').last,
-        source: FileSource.gallery,
-      );
+      if (kIsWeb) {
+        final bytes = await image.readAsBytes();
+        return PickedFileInfo(
+          bytes: bytes,
+          name: image.name,
+          size: bytes.length,
+          extension: image.name.split('.').last,
+          source: FileSource.gallery,
+        );
+      } else {
+        final file = File(image.path);
+        final fileSize = await file.length();
+        return PickedFileInfo(
+          path: image.path,
+          name: image.name,
+          size: fileSize,
+          extension: image.path.split('.').last,
+          source: FileSource.gallery,
+        );
+      }
     } catch (e) {
       rethrow;
     }
@@ -90,21 +114,36 @@ class FilePickerService {
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
         allowMultiple: false,
+        withData: kIsWeb, // Load bytes on web
       );
 
       if (result == null || result.files.isEmpty) return null;
 
       final pickedFile = result.files.first;
 
-      if (pickedFile.path == null) return null;
+      if (kIsWeb) {
+        // On web, use bytes
+        if (pickedFile.bytes == null) return null;
 
-      return PickedFileInfo(
-        path: pickedFile.path!,
-        name: pickedFile.name,
-        size: pickedFile.size,
-        extension: pickedFile.extension ?? '',
-        source: FileSource.files,
-      );
+        return PickedFileInfo(
+          bytes: pickedFile.bytes,
+          name: pickedFile.name,
+          size: pickedFile.size,
+          extension: pickedFile.extension ?? '',
+          source: FileSource.files,
+        );
+      } else {
+        // On mobile/desktop, use path
+        if (pickedFile.path == null) return null;
+
+        return PickedFileInfo(
+          path: pickedFile.path,
+          name: pickedFile.name,
+          size: pickedFile.size,
+          extension: pickedFile.extension ?? '',
+          source: FileSource.files,
+        );
+      }
     } catch (e) {
       rethrow;
     }

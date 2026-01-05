@@ -10,6 +10,7 @@ class UserModel {
   final String? photoUrl;
   final int totalTokens;
   final int usedTokens;
+  final bool isGuest;
 
   UserModel({
     required this.id,
@@ -18,6 +19,7 @@ class UserModel {
     this.photoUrl,
     this.totalTokens = 10,
     this.usedTokens = 0,
+    this.isGuest = false,
   });
 
   int get remainingTokens => totalTokens - usedTokens;
@@ -29,6 +31,7 @@ class UserModel {
     String? photoUrl,
     int? totalTokens,
     int? usedTokens,
+    bool? isGuest,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -37,6 +40,7 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       totalTokens: totalTokens ?? this.totalTokens,
       usedTokens: usedTokens ?? this.usedTokens,
+      isGuest: isGuest ?? this.isGuest,
     );
   }
 

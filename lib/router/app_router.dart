@@ -42,7 +42,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/processing/:invoiceId/:fileName',
         builder: (context, state) {
           final invoiceId = state.pathParameters['invoiceId']!;
-          final fileName = state.pathParameters['fileName']!;
+          final encodedFileName = state.pathParameters['fileName']!;
+          // Decode the URL-encoded filename to handle special characters
+          final fileName = Uri.decodeComponent(encodedFileName);
           return AIProcessingScreen(
             invoiceId: invoiceId,
             fileName: fileName,

@@ -1,16 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/google_sign_in_service.dart';
+import '../services/guest_auth_service.dart';
 import '../services/auth_storage_service.dart';
 
 class AuthNotifier extends StateNotifier<UserModel?> {
   final GoogleSignInService _googleSignInService;
+  final GuestAuthService _guestAuthService;
   final AuthStorageService _storageService;
 
   AuthNotifier({
     required GoogleSignInService googleSignInService,
+    required GuestAuthService guestAuthService,
     required AuthStorageService storageService,
   })  : _googleSignInService = googleSignInService,
+        _guestAuthService = guestAuthService,
         _storageService = storageService,
         super(null) {
     _initialize();
@@ -21,7 +25,10 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     final savedUser = await _storageService.loadUser();
     if (savedUser != null) {
       state = savedUser;
-      _verifySilentSignIn();
+      // Only verify Google sign-in for non-guest users
+      if (!savedUser.isGuest) {
+        _verifySilentSignIn();
+      }
       return;
     }
     await _verifySilentSignIn();
@@ -39,15 +46,30 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     }
   }
 
+  Future<void> signInAsGuest() async {
+    final guestUser = _guestAuthService.createGuestUser();
+    state = guestUser;
+    await _storageService.saveUser(guestUser);
+  }
+
   Future<void> signInWithGoogle() async {
     try {
       final user = await _googleSignInService.signIn();
       if (user != null) {
         // Check for existing user to preserve tokens
         final existingUser = await _storageService.loadUser();
-        final UserModel finalUser = (existingUser?.id == user.id && existingUser != null)
-            ? existingUser
-            : user;
+
+        UserModel finalUser;
+        if (existingUser?.id == user.id && existingUser != null) {
+          // Returning Google user - preserve existing data
+          finalUser = existingUser;
+        } else if (existingUser?.isGuest == true) {
+          // Migrating from guest - transfer token usage
+          finalUser = user.copyWith(usedTokens: existingUser!.usedTokens);
+        } else {
+          // New Google user
+          finalUser = user;
+        }
 
         state = finalUser;
         await _storageService.saveUser(finalUser);
@@ -58,7 +80,10 @@ class AuthNotifier extends StateNotifier<UserModel?> {
   }
 
   Future<void> signOut() async {
-    await _googleSignInService.signOut();
+    // Only sign out from Google if not a guest user
+    if (state?.isGuest != true) {
+      await _googleSignInService.signOut();
+    }
     await _storageService.clearUser();
     state = null;
   }
@@ -75,6 +100,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 final authProvider = StateNotifierProvider<AuthNotifier, UserModel?>((ref) {
   return AuthNotifier(
     googleSignInService: GoogleSignInService(),
+    guestAuthService: GuestAuthService(),
     storageService: AuthStorageService(),
   );
 });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/constants/app_constants.dart';
@@ -25,6 +26,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       setState(() {
         _errorMessage = 'Sign in failed. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleGuestSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await ref.read(authProvider.notifier).signInAsGuest();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to continue as guest. Please try again.';
       });
     } finally {
       if (mounted) {
@@ -106,6 +128,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                // Guest Sign-In (Web Only)
+                if (kIsWeb)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleGuestSignIn,
+                      icon: const Icon(Icons.person_outline),
+                      label: const Text(
+                        'Continue as Guest',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 32),
                 // Error display
                 if (_errorMessage != null)

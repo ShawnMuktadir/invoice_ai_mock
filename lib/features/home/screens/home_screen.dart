@@ -367,9 +367,10 @@ Future<void> _handleFilePick(
     print('⏳ Creating invoice');
 
     // Create invoice with file info
+    // On web, path will be null (files are in memory as bytes)
     final newInvoice = await ref.read(invoiceProvider.notifier).addInvoice(
           pickedFile.name,
-          filePath: pickedFile.path,
+          filePath: pickedFile.path ?? pickedFile.name, // Use filename as fallback on web
         );
 
     print('✓ Invoice created: ${newInvoice.id}');
@@ -377,7 +378,9 @@ Future<void> _handleFilePick(
 
     // Navigate to processing screen - this will automatically close any dialogs
     if (context.mounted) {
-      context.push('/processing/${newInvoice.id}/${pickedFile.name}');
+      // URL-encode the filename to handle special characters (spaces, underscores, etc.)
+      final encodedFileName = Uri.encodeComponent(pickedFile.name);
+      context.push('/processing/${newInvoice.id}/$encodedFileName');
       print('✓ Navigation successful');
     } else {
       print('❌ Context not mounted for navigation');
@@ -474,6 +477,7 @@ Future<bool?> _showFilePreviewDialog(
           onPressed: () => Navigator.pop(context, true),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryIndigo,
+            foregroundColor: Colors.white, // White text for better visibility
           ),
           child: const Text('Process Invoice'),
         ),
